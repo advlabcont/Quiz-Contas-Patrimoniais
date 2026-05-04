@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classifica Contas - Balanço Patrimonial</title>
+    
+    <!-- Tailwind CSS para Estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React e ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para compilar o JSX no browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Estilos de Animação das Estrelas */
+        @keyframes confeti-up {
+          0% { transform: translateY(0) scale(0.5); opacity: 1; }
+          50% { transform: translateY(-80px) scale(1.2) rotate(20deg); opacity: 1; }
+          100% { transform: translateY(-120px) scale(1) rotate(45deg); opacity: 0; }
+        }
+        .animate-confeti {
+          animation: confeti-up 1s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ÍCONES (Substituindo dependência externa por SVGs nativos) ---
+        const CheckIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"></polyline></svg>
+        );
+        const XIcon = ({ className, strokeWidth = 2 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        );
+        const AwardIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+        );
+        const PlayIcon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        );
+        const StarIcon = ({ className, style }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        );
+
+        // --- BANCO DE QUESTÕES ---
+        const questionBank = [
+          { account: "Caixa", answer: "Ativo", justification: "Representa o dinheiro em espécie disponível na empresa." },
+          { account: "Fornecedores", answer: "Passivo", justification: "Obrigações a pagar pelas compras de mercadorias a prazo." },
+          { account: "Capital Social", answer: "Patrimônio Líquido", justification: "Recursos investidos pelos proprietários/sócios na empresa." },
+          { account: "Bancos Conta Movimento", answer: "Ativo", justification: "Saldos disponíveis em contas bancárias de livre movimentação." },
+          { account: "Salários a Pagar", answer: "Passivo", justification: "Dívida da empresa para com seus funcionários pelo trabalho realizado." },
+          { account: "Reservas de Lucros", answer: "Patrimônio Líquido", justification: "Parcela dos lucros retida na empresa para finalidades específicas." },
+          { account: "Clientes (Duplicatas a Receber)", answer: "Ativo", justification: "Direitos a receber decorrentes de vendas a prazo." },
+          { account: "Impostos a Recolher", answer: "Passivo", justification: "Tributos devidos ao governo que ainda não foram pagos." },
+          { account: "Estoques de Mercadorias", answer: "Ativo", justification: "Bens adquiridos ou produzidos destinados à venda." },
+          { account: "Empréstimos Bancários", answer: "Passivo", justification: "Obrigações assumidas junto a instituições financeiras." },
+          { account: "Máquinas e Equipamentos", answer: "Ativo", justification: "Bens tangíveis utilizados na operação da empresa." },
+          { account: "Prejuízos Acumulados", answer: "Patrimônio Líquido", justification: "Resultados negativos acumulados de exercícios anteriores (conta redutora)." },
+          { account: "Veículos", answer: "Ativo", justification: "Bens utilizados para transporte na operação da empresa." },
+          { account: "Financiamentos a Pagar", answer: "Passivo", justification: "Dívidas de longo ou curto prazo para aquisição de bens." },
+          { account: "Móveis e Utensílios", answer: "Ativo", justification: "Bens que guarnecem as instalações da empresa." },
+          { account: "Reservas de Capital", answer: "Patrimônio Líquido", justification: "Valores recebidos que não transitam pelo resultado, como ágio na emissão de ações." },
+          { account: "Imóveis", answer: "Ativo", justification: "Terrenos e edificações de propriedade da empresa." },
+          { account: "Adiantamento de Clientes", answer: "Passivo", justification: "Valores recebidos antecipadamente por bens ou serviços a serem entregues (uma obrigação)." },
+          { account: "Marcas e Patentes", answer: "Ativo", justification: "Bens intangíveis que representam direitos de uso exclusivo." },
+          { account: "Provisão para Férias", answer: "Passivo", justification: "Obrigação estimada com as férias dos funcionários." },
+          { account: "Aplicações Financeiras de Curto Prazo", answer: "Ativo", justification: "Investimentos com alta liquidez e pronta disponibilidade." },
+          { account: "Contas a Pagar", answer: "Passivo", justification: "Obrigações diversas a pagar decorrentes das atividades da empresa." },
+          { account: "Ações em Tesouraria", answer: "Patrimônio Líquido", justification: "Ações da própria empresa adquiridas por ela mesma (conta redutora)." },
+          { account: "Adiantamento a Fornecedores", answer: "Ativo", justification: "Valores pagos antecipadamente a fornecedores, gerando um direito de receber o bem/serviço." },
+          { account: "Títulos a Pagar", answer: "Passivo", justification: "Obrigações documentadas por títulos de crédito (ex: notas promissórias)." },
+          { account: "Computadores e Periféricos", answer: "Ativo", justification: "Equipamentos de informática usados nas atividades operacionais." },
+          { account: "Provisão para 13º Salário", answer: "Passivo", justification: "Obrigação estimada com o décimo terceiro salário dos funcionários." },
+          { account: "Terrenos", answer: "Ativo", justification: "Bens imóveis que geralmente não sofrem depreciação." },
+          { account: "Encargos Sociais a Recolher", answer: "Passivo", justification: "Obrigações como INSS e FGTS sobre a folha de pagamento." },
+          { account: "Despesas Antecipadas (Seguros a Vencer)", answer: "Ativo", justification: "Pagamentos antecipados cujos benefícios ocorrerão no futuro (um direito)." }
+        ];
+
+        // --- GERADOR DE SONS (Web Audio API) ---
+        const playSound = (type) => {
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            if (type === 'correct') {
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+              osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); // A5
+              gain.gain.setValueAtTime(0.5, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+              osc.start(ctx.currentTime);
+              osc.stop(ctx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(300, ctx.currentTime);
+              osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.2);
+              gain.gain.setValueAtTime(0.5, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+              osc.start(ctx.currentTime);
+              osc.stop(ctx.currentTime + 0.3);
+            }
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+          } catch (e) {
+            console.error("Áudio não suportado neste navegador.", e);
+          }
+        };
+
+        const App = () => {
+          const [screen, setScreen] = useState('cover'); // 'cover', 'quiz', 'result'
+          const [questions, setQuestions] = useState([]);
+          const [currentIndex, setCurrentIndex] = useState(0);
+          const [selectedOption, setSelectedOption] = useState(null);
+          const [isChecked, setIsChecked] = useState(false);
+          const [isCorrect, setIsCorrect] = useState(false);
+          const [score, setScore] = useState(0);
+
+          // Embaralha as questões ao iniciar
+          useEffect(() => {
+            const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
+            setQuestions(shuffled);
+          }, []);
+
+          const startGame = () => {
+            const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
+            setQuestions(shuffled);
+            setCurrentIndex(0);
+            setScore(0);
+            setSelectedOption(null);
+            setIsChecked(false);
+            setScreen('quiz');
+          };
+
+          const handleCheck = () => {
+            if (!selectedOption) return;
+            
+            const correct = selectedOption === questions[currentIndex].answer;
+            setIsCorrect(correct);
+            setIsChecked(true);
+
+            if (correct) {
+              playSound('correct');
+              setScore(score + 1);
+            } else {
+              playSound('wrong');
+            }
+          };
+
+          const handleNext = () => {
+            if (currentIndex < questions.length - 1) {
+              setCurrentIndex(currentIndex + 1);
+              setSelectedOption(null);
+              setIsChecked(false);
+            } else {
+              setScreen('result');
+            }
+          };
+
+          // --- TELA DE CAPA ---
+          if (screen === 'cover') {
+            return (
+              <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-sans">
+                <div className="max-w-md w-full space-y-10 flex flex-col items-center">
+                  
+                  <div className="space-y-4">
+                    <div className="w-24 h-24 bg-green-500 rounded-3xl mx-auto flex items-center justify-center shadow-[0_6px_0_0_rgba(21,128,61,1)] mb-6">
+                      <AwardIcon className="text-white w-14 h-14" />
+                    </div>
+                    <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">
+                      Classifica<span className="text-green-500">Contas</span>
+                    </h1>
+                    <p className="text-lg text-slate-500 font-medium">
+                      Domine o Balanço Patrimonial brincando!
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={startGame}
+                    className="w-full bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(21,128,61,1)] active:shadow-[0_0px_0_0_rgba(21,128,61,1)] active:translate-y-[6px] flex items-center justify-center gap-2 uppercase tracking-wide"
+                  >
+                    <PlayIcon className="w-6 h-6" />
+                    Começar
+                  </button>
+
+                  <div className="pt-10 border-t border-slate-200 w-full flex flex-col gap-6 text-sm text-slate-500">
+                    <div>
+                      <p className="font-bold text-slate-700">Desenvolvido por Anderson Daniel</p>
+                      <p>Dúvidas e Sugestões: <a href="mailto:adanv.vieira@gmail.com" className="text-blue-500 hover:underline">adanv.vieira@gmail.com</a></p>
+                    </div>
+                    
+                    <blockquote className="italic border-l-4 border-green-400 pl-4 text-left text-slate-600 bg-slate-50 p-3 rounded-r-lg">
+                      "Não a nós, Senhor, nenhuma glória para nós, mas sim ao teu nome, por teu amor e por tua fidelidade!"
+                      <footer className="mt-2 font-bold text-right text-xs">- Salmos 115:1</footer>
+                    </blockquote>
+                  </div>
+
+                </div>
+              </div>
+            );
+          }
+
+          // --- TELA DE RESULTADO ---
+          if (screen === 'result') {
+            return (
+              <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-sans">
+                <div className="max-w-md w-full space-y-8 flex flex-col items-center">
+                  
+                  <div className="w-32 h-32 bg-yellow-400 rounded-full mx-auto flex items-center justify-center shadow-[0_8px_0_0_rgba(202,138,4,1)] animate-bounce mb-4">
+                    <AwardIcon className="text-yellow-800 w-16 h-16" />
+                  </div>
+                  
+                  <h2 className="text-3xl font-extrabold text-slate-800">
+                    Lição Concluída!
+                  </h2>
+                  
+                  <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 w-full">
+                    <p className="text-lg text-green-800 font-bold mb-1">Seu Desempenho</p>
+                    <p className="text-5xl font-black text-green-500">{score}<span className="text-2xl text-green-400">/30</span></p>
+                  </div>
+
+                  <button
+                    onClick={startGame}
+                    className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(29,78,216,1)] active:shadow-[0_0px_0_0_rgba(29,78,216,1)] active:translate-y-[6px] uppercase tracking-wide mt-4"
+                  >
+                    Jogar Novamente
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          // --- TELA DE QUIZ ---
+          const currentQuestion = questions[currentIndex];
+          const progressPercentage = ((currentIndex) / questions.length) * 100;
+
+          return (
+            <div className="min-h-screen bg-white flex flex-col font-sans select-none overflow-hidden relative">
+              
+              {/* Barra de Progresso Superior */}
+              <div className="w-full max-w-3xl mx-auto p-4 flex flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setScreen('cover')}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <XIcon className="w-6 h-6" strokeWidth="3" />
+                  </button>
+                  <div className="h-4 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-green-500 rounded-full transition-all duration-500 ease-out"
+                      style={{ width: `${progressPercentage}%` }}
+                    >
+                      {/* Brilho na barra */}
+                      <div className="w-full h-1 bg-white/30 rounded-t-full mt-0.5 mx-1" />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Contador de Questões e Acertos */}
+                <div className="flex justify-between items-center text-sm font-bold text-slate-500 px-10">
+                  <span>Questão {currentIndex + 1} de {questions.length}</span>
+                  <span className="text-green-600 bg-green-100 px-3 py-1 rounded-full border border-green-200 flex items-center gap-1">
+                    Acertos: <span className="text-lg leading-none">{score}</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Área da Pergunta */}
+              <div className="flex-1 max-w-3xl w-full mx-auto p-6 flex flex-col justify-center">
+                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-8 text-center">
+                  Onde a conta abaixo é classificada no Balanço Patrimonial?
+                </h2>
+                
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-3xl p-8 mb-10 text-center shadow-sm">
+                  <span className="text-3xl md:text-4xl font-bold text-blue-900">
+                    {currentQuestion.account}
+                  </span>
+                </div>
+
+                {/* Botões de Opções */}
+                <div className="grid grid-cols-1 gap-4">
+                  {['Ativo', 'Passivo', 'Patrimônio Líquido'].map((option) => {
+                    const isSelected = selectedOption === option;
+                    const isCorrectOption = option === currentQuestion.answer;
+                    
+                    let btnClass = "border-2 text-lg font-bold py-4 px-6 rounded-2xl transition-all text-center relative ";
+                    
+                    if (isChecked) {
+                      if (option === selectedOption && isCorrect) {
+                         btnClass += "bg-green-100 border-green-500 text-green-700 shadow-[0_4px_0_0_rgba(34,197,94,1)]";
+                      } else if (option === selectedOption && !isCorrect) {
+                         btnClass += "bg-red-100 border-red-500 text-red-700 shadow-[0_4px_0_0_rgba(239,68,68,1)]";
+                      } else if (isCorrectOption) {
+                         btnClass += "bg-green-50 border-green-400 text-green-600 border-dashed opacity-70";
+                      } else {
+                         btnClass += "bg-slate-50 border-slate-200 text-slate-400 opacity-50";
+                      }
+                    } else {
+                      if (isSelected) {
+                        btnClass += "bg-blue-100 border-blue-500 text-blue-600 shadow-[0_4px_0_0_rgba(59,130,246,1)] translate-y-0";
+                      } else {
+                        btnClass += "bg-white border-slate-300 text-slate-700 shadow-[0_4px_0_0_rgba(203,213,225,1)] hover:bg-slate-50 active:shadow-[0_0px_0_0_rgba(203,213,225,1)] active:translate-y-[4px]";
+                      }
+                    }
+
+                    return (
+                      <button
+                        key={option}
+                        disabled={isChecked}
+                        onClick={() => setSelectedOption(option)}
+                        className={btnClass}
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Rodapé (Verificar ou Continuar) */}
+              <div className={`w-full border-t-2 transition-colors duration-300 relative z-10 ${
+                !isChecked ? 'border-slate-200 bg-white' : 
+                isCorrect ? 'border-green-200 bg-green-100' : 'border-red-200 bg-red-100'
+              }`}>
+                
+                {/* Efeito Visual de Acerto (Estrelas flutuantes) */}
+                {isChecked && isCorrect && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10 pointer-events-none flex gap-6">
+                     {[...Array(5)].map((_, i) => (
+                        <StarIcon 
+                          key={i} 
+                          className="w-10 h-10 text-yellow-400 fill-yellow-400 animate-confeti drop-shadow-md" 
+                          style={{ animationDelay: `${i * 0.1}s` }} 
+                        />
+                     ))}
+                  </div>
+                )}
+
+                <div className="max-w-3xl mx-auto p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                  
+                  {/* Mensagem de Feedback */}
+                  <div className="flex-1 w-full flex items-center">
+                    {isChecked && isCorrect && (
+                      <div className="flex items-start gap-3 text-green-700">
+                        <div className="bg-white p-2 rounded-full shadow-sm mt-1">
+                          <CheckIcon className="w-8 h-8 text-green-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-extrabold mb-1">Excelente!</h3>
+                          <p className="text-green-800 text-sm font-medium leading-relaxed max-w-lg">
+                            <span className="font-bold">Porquê?</span> {currentQuestion.justification}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isChecked && !isCorrect && (
+                      <div className="flex items-start gap-3 text-red-700">
+                         <div className="bg-white p-2 rounded-full shadow-sm mt-1">
+                          <XIcon className="w-8 h-8 text-red-500" strokeWidth="4" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-extrabold mb-1">Incorreto.</h3>
+                          <p className="text-red-600 font-bold text-sm mb-1">
+                            A resposta certa é: {currentQuestion.answer}
+                          </p>
+                          <p className="text-red-800 text-sm font-medium leading-relaxed max-w-lg">
+                            <span className="font-bold">Porquê?</span> {currentQuestion.justification}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botão de Ação */}
+                  <button
+                    onClick={isChecked ? handleNext : handleCheck}
+                    disabled={!selectedOption && !isChecked}
+                    className={`w-full md:w-auto min-w-[200px] py-4 px-8 rounded-2xl font-bold text-lg uppercase tracking-wide transition-all
+                      ${!selectedOption && !isChecked ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 
+                        isChecked ? 
+                          (isCorrect ? 'bg-green-500 hover:bg-green-400 text-white shadow-[0_4px_0_0_rgba(21,128,61,1)] active:shadow-[0_0px_0_0_rgba(21,128,61,1)] active:translate-y-[4px]' : 
+                                       'bg-red-500 hover:bg-red-400 text-white shadow-[0_4px_0_0_rgba(185,28,28,1)] active:shadow-[0_0px_0_0_rgba(185,28,28,1)] active:translate-y-[4px]') 
+                        : 'bg-green-500 hover:bg-green-400 text-white shadow-[0_4px_0_0_rgba(21,128,61,1)] active:shadow-[0_0px_0_0_rgba(21,128,61,1)] active:translate-y-[4px]'
+                      }
+                    `}
+                  >
+                    {isChecked ? 'Continuar' : 'Verificar'}
+                  </button>
+
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
