@@ -8,6 +8,13 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Configuração do Tailwind para Modo Noturno -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
+    
     <!-- React e ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -15,13 +22,13 @@
     <!-- Babel para JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- ÍCONES EM SVG (Substituindo Lucide-React) ---
+        // --- ÍCONES EM SVG ---
         const Check = ({ className, strokeWidth = "2" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"></polyline></svg>
         );
@@ -49,7 +56,12 @@
         const BookOpen = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
         );
-
+        const Sun = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>
+        );
+        const Moon = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+        );
 
         // --- BANCO DE QUESTÕES (3 CATEGORIAS) ---
         const cat1_AtivoPassivoPL = [
@@ -127,7 +139,7 @@
           { id: 3, title: "Lançamentos Contábeis Básicos", data: cat3_LancamentosContabeis, icon: <BookOpen className="w-8 h-8" />, prompt: "Qual o lançamento contábil correto para a operação abaixo?", color: "bg-orange-500", shadow: "shadow-[0_6px_0_0_rgba(194,65,12,1)]", active: "active:shadow-[0_0px_0_0_rgba(194,65,12,1)]" }
         ];
 
-        // --- GERADOR DE SONS (Web Audio API) ---
+        // --- GERADOR DE SONS ---
         const playSound = (type) => {
           try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -138,8 +150,8 @@
 
             if (type === 'correct') {
               osc.type = 'sine';
-              osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-              osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); // A5
+              osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+              osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1);
               gain.gain.setValueAtTime(0.5, ctx.currentTime);
               gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
               osc.start(ctx.currentTime);
@@ -162,6 +174,7 @@
         };
 
         const App = () => {
+          // --- ESTADOS DO APP ---
           const [screen, setScreen] = useState('cover'); // 'cover', 'categories', 'quiz', 'result'
           const [activeCategory, setActiveCategory] = useState(null);
           const [questions, setQuestions] = useState([]);
@@ -171,8 +184,39 @@
           const [isCorrect, setIsCorrect] = useState(false);
           const [score, setScore] = useState(0);
 
+          // --- ESTADO DO MODO NOTURNO (DARK MODE) ---
+          const [isDark, setIsDark] = useState(() => {
+            if (typeof window !== 'undefined') {
+                return localStorage.getItem('theme') === 'dark' ||
+                       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            }
+            return false;
+          });
+
+          // Aplica a classe ao HTML e guarda preferência
+          useEffect(() => {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+          }, [isDark]);
+
+          // --- COMPONENTE DO BOTÃO DE TEMA ---
+          const ThemeToggle = ({ className }) => (
+            <button
+                onClick={() => setIsDark(!isDark)}
+                className={`p-3 rounded-full transition-all duration-300 ${isDark ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-white text-slate-400 hover:bg-slate-200 shadow-sm'} ${className}`}
+                aria-label="Alternar Tema Noturno"
+            >
+                {isDark ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            </button>
+          );
+
+          // --- LÓGICA DO JOGO ---
           const startCategory = (category) => {
-            // Embaralha as questões e as opções de cada questão
             const shuffledQuestions = category.data.map(q => {
               return { ...q, options: [...q.options].sort(() => Math.random() - 0.5) };
             }).sort(() => Math.random() - 0.5);
@@ -188,7 +232,6 @@
 
           const handleCheck = () => {
             if (!selectedOption) return;
-            
             const correct = selectedOption === questions[currentIndex].answer;
             setIsCorrect(correct);
             setIsChecked(true);
@@ -214,17 +257,19 @@
           // --- TELA DE CAPA ---
           if (screen === 'cover') {
             return (
-              <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
+              <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col items-center justify-center p-6 text-center font-sans relative">
+                
+                <ThemeToggle className="absolute top-6 right-6" />
+
                 <div className="max-w-md w-full space-y-10 flex flex-col items-center">
-                  
                   <div className="space-y-4">
                     <div className="w-24 h-24 bg-green-500 rounded-3xl mx-auto flex items-center justify-center shadow-[0_6px_0_0_rgba(21,128,61,1)] mb-6">
                       <Award className="text-white w-14 h-14" />
                     </div>
-                    <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">
+                    <h1 className="text-4xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight transition-colors">
                       Classifica<span className="text-green-500">Contas</span>
                     </h1>
-                    <p className="text-lg text-slate-500 font-medium px-4">
+                    <p className="text-lg text-slate-500 dark:text-slate-400 font-medium px-4 transition-colors">
                       O seu simulador interativo para dominar a Contabilidade!
                     </p>
                   </div>
@@ -237,13 +282,13 @@
                     Começar Agora
                   </button>
 
-                  <div className="pt-10 border-t border-slate-200 w-full flex flex-col gap-6 text-sm text-slate-500">
+                  <div className="pt-10 border-t border-slate-200 dark:border-slate-800 w-full flex flex-col gap-6 text-sm text-slate-500 dark:text-slate-400 transition-colors">
                     <div>
-                      <p className="font-bold text-slate-700">Desenvolvido por Anderson Daniel</p>
-                      <p>Dúvidas e Sugestões: <a href="mailto:adanv.vieira@gmail.com" className="text-blue-500 hover:underline">adanv.vieira@gmail.com</a></p>
+                      <p className="font-bold text-slate-700 dark:text-slate-300">Desenvolvido por Anderson Daniel</p>
+                      <p>Dúvidas e Sugestões: <a href="mailto:adanv.vieira@gmail.com" className="text-blue-500 dark:text-blue-400 hover:underline">adanv.vieira@gmail.com</a></p>
                     </div>
                     
-                    <blockquote className="italic border-l-4 border-green-400 pl-4 text-left text-slate-600 bg-slate-100 p-3 rounded-r-lg">
+                    <blockquote className="italic border-l-4 border-green-400 pl-4 text-left text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 p-3 rounded-r-lg transition-colors">
                       "Não a nós, Senhor, nenhuma glória para nós, mas sim ao teu nome, por teu amor e por tua fidelidade!"
                       <footer className="mt-2 font-bold text-right text-xs">- Salmos 115:1</footer>
                     </blockquote>
@@ -256,17 +301,20 @@
           // --- TELA DE MÓDULOS (Categorias) ---
           if (screen === 'categories') {
             return (
-              <div className="min-h-screen bg-slate-50 p-6 font-sans">
+              <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 p-6 font-sans">
                 <div className="max-w-2xl mx-auto space-y-8">
                   
-                  <div className="flex items-center gap-4 pt-4">
-                    <button onClick={() => setScreen('cover')} className="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-full shadow-sm">
-                      <ArrowRight className="w-6 h-6 rotate-180" />
-                    </button>
-                    <h2 className="text-3xl font-extrabold text-slate-800">Módulos de Estudo</h2>
+                  <div className="flex items-center justify-between pt-4">
+                    <div className="flex items-center gap-4">
+                      <button onClick={() => setScreen('cover')} className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm transition-colors">
+                        <ArrowRight className="w-6 h-6 rotate-180" />
+                      </button>
+                      <h2 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 transition-colors">Módulos de Estudo</h2>
+                    </div>
+                    <ThemeToggle />
                   </div>
 
-                  <p className="text-slate-500 font-medium text-lg mb-8">
+                  <p className="text-slate-500 dark:text-slate-400 font-medium text-lg mb-8 transition-colors">
                     Escolha um módulo abaixo para iniciar o seu treinamento. Cada módulo contém 20 questões.
                   </p>
 
@@ -301,20 +349,22 @@
           // --- TELA DE RESULTADO ---
           if (screen === 'result') {
             return (
-              <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
+              <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col items-center justify-center p-6 text-center font-sans relative">
+                
+                <ThemeToggle className="absolute top-6 right-6" />
+
                 <div className="max-w-md w-full space-y-8 flex flex-col items-center">
-                  
                   <div className="w-32 h-32 bg-yellow-400 rounded-full mx-auto flex items-center justify-center shadow-[0_8px_0_0_rgba(202,138,4,1)] animate-bounce mb-4">
                     <Award className="text-yellow-800 w-16 h-16" />
                   </div>
                   
-                  <h2 className="text-3xl font-extrabold text-slate-800">
+                  <h2 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 transition-colors">
                     Módulo Concluído!
                   </h2>
                   
-                  <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 w-full">
-                    <p className="text-lg text-green-800 font-bold mb-1">Seu Desempenho em {activeCategory.title}</p>
-                    <p className="text-5xl font-black text-green-500">{score}<span className="text-2xl text-green-400">/{questions.length}</span></p>
+                  <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800/50 rounded-2xl p-6 w-full transition-colors">
+                    <p className="text-lg text-green-800 dark:text-green-400 font-bold mb-1">Seu Desempenho em {activeCategory.title}</p>
+                    <p className="text-5xl font-black text-green-500">{score}<span className="text-2xl text-green-400 dark:text-green-600">/{questions.length}</span></p>
                   </div>
 
                   <div className="w-full space-y-4 mt-4">
@@ -326,7 +376,7 @@
                     </button>
                     <button
                       onClick={() => setScreen('categories')}
-                      className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(148,163,184,1)] active:shadow-[0_0px_0_0_rgba(148,163,184,1)] active:translate-y-[6px] uppercase tracking-wide"
+                      className="w-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(148,163,184,1)] dark:shadow-[0_6px_0_0_rgba(71,85,105,1)] active:shadow-[0_0px_0_0_rgba(148,163,184,1)] dark:active:shadow-[0_0px_0_0_rgba(71,85,105,1)] active:translate-y-[6px] uppercase tracking-wide"
                     >
                       Voltar aos Módulos
                     </button>
@@ -341,9 +391,8 @@
           const progressPercentage = ((currentIndex) / questions.length) * 100;
 
           return (
-            <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none overflow-hidden relative">
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300 flex flex-col font-sans select-none overflow-hidden relative">
               
-              {/* Efeito Estrelas (CSS in JS) */}
               <style>{`
                 @keyframes confeti-up {
                   0% { transform: translateY(0) scale(0.5); opacity: 1; }
@@ -358,11 +407,12 @@
                 <div className="flex items-center gap-4">
                   <button 
                     onClick={() => setScreen('categories')}
-                    className="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1 rounded-full shadow-sm"
+                    className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm transition-colors"
                   >
                     <X strokeWidth="3" className="w-6 h-6" />
                   </button>
-                  <div className="h-4 flex-1 bg-slate-200 rounded-full overflow-hidden">
+                  
+                  <div className="h-4 flex-1 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden transition-colors">
                     <div 
                       className="h-full bg-green-500 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${progressPercentage}%` }}
@@ -370,34 +420,36 @@
                       <div className="w-full h-1 bg-white/30 rounded-t-full mt-0.5 mx-1" />
                     </div>
                   </div>
+
+                  <ThemeToggle className="ml-2" />
                 </div>
                 
-                <div className="flex justify-between items-center text-sm font-bold text-slate-500 px-10">
+                <div className="flex justify-between items-center text-sm font-bold text-slate-500 dark:text-slate-400 px-4 md:px-14 transition-colors">
                   <span>Questão {currentIndex + 1} de {questions.length}</span>
-                  <span className="text-green-600 bg-green-100 px-3 py-1 rounded-full border border-green-200 flex items-center gap-1">
+                  <span className="text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full border border-green-200 dark:border-green-800/50 flex items-center gap-1 transition-colors">
                     Acertos: <span className="text-lg leading-none">{score}</span>
                   </span>
                 </div>
               </div>
 
               {/* Área da Pergunta */}
-              <div className="flex-1 max-w-3xl w-full mx-auto p-6 flex flex-col justify-center">
-                <div className="mb-8 text-center space-y-4">
+              <div className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center">
+                <div className="mb-6 md:mb-8 text-center space-y-4">
                    <span className={`inline-block px-4 py-1 rounded-full text-sm font-bold text-white shadow-sm ${activeCategory.color}`}>
                      {activeCategory.title}
                    </span>
-                   <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">
+                   <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-slate-100 transition-colors">
                      {activeCategory.prompt}
                    </h2>
                 </div>
                 
-                <div className="bg-white border-2 border-slate-200 rounded-3xl p-8 mb-10 text-center shadow-sm">
-                  <span className="text-2xl md:text-4xl font-bold text-blue-900 leading-snug">
+                <div className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-3xl p-6 md:p-8 mb-8 text-center shadow-sm transition-colors">
+                  <span className="text-2xl md:text-4xl font-bold text-blue-900 dark:text-blue-100 leading-snug transition-colors">
                     {currentQuestion.text}
                   </span>
                 </div>
 
-                {/* Botões de Opções Dinâmicos */}
+                {/* Botões de Opções */}
                 <div className="grid grid-cols-1 gap-4">
                   {currentQuestion.options.map((option) => {
                     const isSelected = selectedOption === option;
@@ -408,19 +460,19 @@
                     
                     if (isChecked) {
                       if (option === selectedOption && isCorrect) {
-                         btnClass += "bg-green-100 border-green-500 text-green-700 shadow-[0_4px_0_0_rgba(34,197,94,1)]";
+                         btnClass += "bg-green-100 dark:bg-green-900/40 border-green-500 text-green-700 dark:text-green-400 shadow-[0_4px_0_0_rgba(34,197,94,1)]";
                       } else if (option === selectedOption && !isCorrect) {
-                         btnClass += "bg-red-100 border-red-500 text-red-700 shadow-[0_4px_0_0_rgba(239,68,68,1)]";
+                         btnClass += "bg-red-100 dark:bg-red-900/40 border-red-500 text-red-700 dark:text-red-400 shadow-[0_4px_0_0_rgba(239,68,68,1)]";
                       } else if (isCorrectOption) {
-                         btnClass += "bg-green-50 border-green-400 text-green-600 border-dashed opacity-70";
+                         btnClass += "bg-green-50 dark:bg-green-900/20 border-green-400 dark:border-green-700 text-green-600 dark:text-green-500 border-dashed opacity-80";
                       } else {
-                         btnClass += "bg-slate-50 border-slate-200 text-slate-400 opacity-50";
+                         btnClass += "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 opacity-50";
                       }
                     } else {
                       if (isSelected) {
-                        btnClass += "bg-blue-100 border-blue-500 text-blue-600 shadow-[0_4px_0_0_rgba(59,130,246,1)] translate-y-0";
+                        btnClass += "bg-blue-100 dark:bg-blue-900/50 border-blue-500 text-blue-600 dark:text-blue-400 shadow-[0_4px_0_0_rgba(59,130,246,1)] translate-y-0";
                       } else {
-                        btnClass += "bg-white border-slate-300 text-slate-700 shadow-[0_4px_0_0_rgba(203,213,225,1)] hover:bg-slate-50 active:shadow-[0_0px_0_0_rgba(203,213,225,1)] active:translate-y-[4px]";
+                        btnClass += "bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 shadow-[0_4px_0_0_rgba(203,213,225,1)] dark:shadow-[0_4px_0_0_rgba(71,85,105,1)] hover:bg-slate-50 dark:hover:bg-slate-700 active:shadow-[0_0px_0_0_rgba(203,213,225,1)] dark:active:shadow-[0_0px_0_0_rgba(71,85,105,1)] active:translate-y-[4px]";
                       }
                     }
 
@@ -438,13 +490,13 @@
                 </div>
               </div>
 
-              {/* Rodapé (Verificar ou Continuar) */}
+              {/* Rodapé Feedback */}
               <div className={`w-full border-t-2 transition-colors duration-300 relative z-10 ${
-                !isChecked ? 'border-slate-200 bg-white' : 
-                isCorrect ? 'border-green-200 bg-green-100' : 'border-red-200 bg-red-100'
+                !isChecked ? 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900' : 
+                isCorrect ? 'border-green-200 dark:border-green-900 bg-green-100 dark:bg-green-900/30' : 'border-red-200 dark:border-red-900 bg-red-100 dark:bg-red-900/30'
               }`}>
                 
-                {/* Efeito Visual de Acerto */}
+                {/* Estrelas */}
                 {isChecked && isCorrect && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10 pointer-events-none flex gap-6">
                      {[...Array(5)].map((_, i) => (
@@ -461,13 +513,13 @@
                   
                   <div className="flex-1 w-full flex items-center">
                     {isChecked && isCorrect && (
-                      <div className="flex items-start gap-3 text-green-700">
-                        <div className="bg-white p-2 rounded-full shadow-sm mt-1">
+                      <div className="flex items-start gap-3 text-green-700 dark:text-green-400">
+                        <div className="bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm mt-1 transition-colors">
                           <Check strokeWidth="4" className="w-8 h-8 text-green-500" />
                         </div>
                         <div>
                           <h3 className="text-2xl font-extrabold mb-1">Excelente!</h3>
-                          <p className="text-green-800 text-sm font-medium leading-relaxed max-w-lg">
+                          <p className="text-green-800 dark:text-green-300 text-sm font-medium leading-relaxed max-w-lg transition-colors">
                             <span className="font-bold">Por que?</span> {currentQuestion.justification}
                           </p>
                         </div>
@@ -475,16 +527,16 @@
                     )}
                     
                     {isChecked && !isCorrect && (
-                      <div className="flex items-start gap-3 text-red-700">
-                         <div className="bg-white p-2 rounded-full shadow-sm mt-1">
+                      <div className="flex items-start gap-3 text-red-700 dark:text-red-400">
+                         <div className="bg-white dark:bg-slate-800 p-2 rounded-full shadow-sm mt-1 transition-colors">
                           <X strokeWidth="4" className="w-8 h-8 text-red-500" />
                         </div>
                         <div>
                           <h3 className="text-2xl font-extrabold mb-1">Incorreto.</h3>
-                          <p className="text-red-600 font-bold text-sm mb-1">
+                          <p className="text-red-600 dark:text-red-400 font-bold text-sm mb-1 transition-colors">
                             A resposta certa é: {currentQuestion.answer}
                           </p>
-                          <p className="text-red-800 text-sm font-medium leading-relaxed max-w-lg">
+                          <p className="text-red-800 dark:text-red-300 text-sm font-medium leading-relaxed max-w-lg transition-colors">
                             <span className="font-bold">Por que?</span> {currentQuestion.justification}
                           </p>
                         </div>
@@ -496,7 +548,7 @@
                     onClick={isChecked ? handleNext : handleCheck}
                     disabled={!selectedOption && !isChecked}
                     className={`w-full md:w-auto min-w-[200px] py-4 px-8 rounded-2xl font-bold text-lg uppercase tracking-wide transition-all
-                      ${!selectedOption && !isChecked ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 
+                      ${!selectedOption && !isChecked ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed' : 
                         isChecked ? 
                           (isCorrect ? 'bg-green-500 hover:bg-green-400 text-white shadow-[0_4px_0_0_rgba(21,128,61,1)] active:shadow-[0_0px_0_0_rgba(21,128,61,1)] active:translate-y-[4px]' : 
                                        'bg-red-500 hover:bg-red-400 text-white shadow-[0_4px_0_0_rgba(185,28,28,1)] active:shadow-[0_0px_0_0_rgba(185,28,28,1)] active:translate-y-[4px]') 
@@ -506,7 +558,6 @@
                   >
                     {isChecked ? 'Continuar' : 'Verificar'}
                   </button>
-
                 </div>
               </div>
             </div>
