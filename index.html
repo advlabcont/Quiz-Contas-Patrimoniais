@@ -3,29 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classifica Contas - Balanço Patrimonial</title>
+    <title>Classifica Contas - Simulador Contábil</title>
     
-    <!-- Tailwind CSS para Estilização -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- React e ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel para compilar o JSX no browser -->
+    <!-- Babel para JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <style>
-        /* Estilos de Animação das Estrelas */
-        @keyframes confeti-up {
-          0% { transform: translateY(0) scale(0.5); opacity: 1; }
-          50% { transform: translateY(-80px) scale(1.2) rotate(20deg); opacity: 1; }
-          100% { transform: translateY(-120px) scale(1) rotate(45deg); opacity: 0; }
-        }
-        .animate-confeti {
-          animation: confeti-up 1s ease-out forwards;
-        }
-    </style>
 </head>
 <body class="bg-slate-50">
     <div id="root"></div>
@@ -33,55 +21,110 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- ÍCONES (Substituindo dependência externa por SVGs nativos) ---
-        const CheckIcon = ({ className }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"></polyline></svg>
+        // --- ÍCONES EM SVG (Substituindo Lucide-React) ---
+        const Check = ({ className, strokeWidth = "2" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"></polyline></svg>
         );
-        const XIcon = ({ className, strokeWidth = 2 }) => (
+        const X = ({ className, strokeWidth = "2" }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         );
-        const AwardIcon = ({ className }) => (
+        const Award = ({ className }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
         );
-        const PlayIcon = ({ className }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        const Play = ({ className, fill = "none" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
         );
-        const StarIcon = ({ className, style }) => (
+        const Star = ({ className, style }) => (
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
         );
+        const Layers = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>
+        );
+        const FileText = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        );
+        const ArrowRight = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        );
+        const BookOpen = ({ className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+        );
 
-        // --- BANCO DE QUESTÕES ---
-        const questionBank = [
-          { account: "Caixa", answer: "Ativo", justification: "Representa o dinheiro em espécie disponível na empresa." },
-          { account: "Fornecedores", answer: "Passivo", justification: "Obrigações a pagar pelas compras de mercadorias a prazo." },
-          { account: "Capital Social", answer: "Patrimônio Líquido", justification: "Recursos investidos pelos proprietários/sócios na empresa." },
-          { account: "Bancos Conta Movimento", answer: "Ativo", justification: "Saldos disponíveis em contas bancárias de livre movimentação." },
-          { account: "Salários a Pagar", answer: "Passivo", justification: "Dívida da empresa para com seus funcionários pelo trabalho realizado." },
-          { account: "Reservas de Lucros", answer: "Patrimônio Líquido", justification: "Parcela dos lucros retida na empresa para finalidades específicas." },
-          { account: "Clientes (Duplicatas a Receber)", answer: "Ativo", justification: "Direitos a receber decorrentes de vendas a prazo." },
-          { account: "Impostos a Recolher", answer: "Passivo", justification: "Tributos devidos ao governo que ainda não foram pagos." },
-          { account: "Estoques de Mercadorias", answer: "Ativo", justification: "Bens adquiridos ou produzidos destinados à venda." },
-          { account: "Empréstimos Bancários", answer: "Passivo", justification: "Obrigações assumidas junto a instituições financeiras." },
-          { account: "Máquinas e Equipamentos", answer: "Ativo", justification: "Bens tangíveis utilizados na operação da empresa." },
-          { account: "Prejuízos Acumulados", answer: "Patrimônio Líquido", justification: "Resultados negativos acumulados de exercícios anteriores (conta redutora)." },
-          { account: "Veículos", answer: "Ativo", justification: "Bens utilizados para transporte na operação da empresa." },
-          { account: "Financiamentos a Pagar", answer: "Passivo", justification: "Dívidas de longo ou curto prazo para aquisição de bens." },
-          { account: "Móveis e Utensílios", answer: "Ativo", justification: "Bens que guarnecem as instalações da empresa." },
-          { account: "Reservas de Capital", answer: "Patrimônio Líquido", justification: "Valores recebidos que não transitam pelo resultado, como ágio na emissão de ações." },
-          { account: "Imóveis", answer: "Ativo", justification: "Terrenos e edificações de propriedade da empresa." },
-          { account: "Adiantamento de Clientes", answer: "Passivo", justification: "Valores recebidos antecipadamente por bens ou serviços a serem entregues (uma obrigação)." },
-          { account: "Marcas e Patentes", answer: "Ativo", justification: "Bens intangíveis que representam direitos de uso exclusivo." },
-          { account: "Provisão para Férias", answer: "Passivo", justification: "Obrigação estimada com as férias dos funcionários." },
-          { account: "Aplicações Financeiras de Curto Prazo", answer: "Ativo", justification: "Investimentos com alta liquidez e pronta disponibilidade." },
-          { account: "Contas a Pagar", answer: "Passivo", justification: "Obrigações diversas a pagar decorrentes das atividades da empresa." },
-          { account: "Ações em Tesouraria", answer: "Patrimônio Líquido", justification: "Ações da própria empresa adquiridas por ela mesma (conta redutora)." },
-          { account: "Adiantamento a Fornecedores", answer: "Ativo", justification: "Valores pagos antecipadamente a fornecedores, gerando um direito de receber o bem/serviço." },
-          { account: "Títulos a Pagar", answer: "Passivo", justification: "Obrigações documentadas por títulos de crédito (ex: notas promissórias)." },
-          { account: "Computadores e Periféricos", answer: "Ativo", justification: "Equipamentos de informática usados nas atividades operacionais." },
-          { account: "Provisão para 13º Salário", answer: "Passivo", justification: "Obrigação estimada com o décimo terceiro salário dos funcionários." },
-          { account: "Terrenos", answer: "Ativo", justification: "Bens imóveis que geralmente não sofrem depreciação." },
-          { account: "Encargos Sociais a Recolher", answer: "Passivo", justification: "Obrigações como INSS e FGTS sobre a folha de pagamento." },
-          { account: "Despesas Antecipadas (Seguros a Vencer)", answer: "Ativo", justification: "Pagamentos antecipados cujos benefícios ocorrerão no futuro (um direito)." }
+
+        // --- BANCO DE QUESTÕES (3 CATEGORIAS) ---
+        const cat1_AtivoPassivoPL = [
+          { text: "Caixa", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Representa o dinheiro em espécie disponível na empresa." },
+          { text: "Fornecedores", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Obrigações a pagar pelas compras de mercadorias a prazo." },
+          { text: "Capital Social", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Patrimônio Líquido", justification: "Recursos investidos pelos proprietários/sócios na empresa." },
+          { text: "Clientes (Duplicatas a Receber)", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Direitos a receber decorrentes de vendas a prazo." },
+          { text: "Salários a Pagar", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Dívida da empresa para com seus funcionários pelo trabalho realizado." },
+          { text: "Estoques de Mercadorias", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Bens adquiridos ou produzidos destinados à venda." },
+          { text: "Prejuízos Acumulados", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Patrimônio Líquido", justification: "Resultados negativos acumulados de exercícios anteriores (conta redutora)." },
+          { text: "Empréstimos Bancários", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Obrigações assumidas junto a instituições financeiras." },
+          { text: "Veículos", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Bens utilizados para transporte na operação da empresa." },
+          { text: "Reservas de Lucros", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Patrimônio Líquido", justification: "Parcela dos lucros retida na empresa para finalidades específicas." },
+          { text: "Impostos a Recolher", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Tributos devidos ao governo que ainda não foram pagos." },
+          { text: "Marcas e Patentes", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Bens intangíveis que representam direitos de uso exclusivo da empresa." },
+          { text: "Adiantamento de Clientes", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Valores recebidos antecipadamente por bens/serviços a serem entregues (Obrigação)." },
+          { text: "Bancos Conta Movimento", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Saldos disponíveis em contas bancárias de livre movimentação." },
+          { text: "Móveis e Utensílios", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Bens que guarnecem as instalações da empresa." },
+          { text: "Ações em Tesouraria", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Patrimônio Líquido", justification: "Ações da própria empresa adquiridas por ela mesma (conta redutora do PL)." },
+          { text: "Provisão para Férias", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Obrigação estimada com as férias dos funcionários." },
+          { text: "Despesas Antecipadas (Seguros a Vencer)", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Pagamentos antecipados cujos benefícios ocorrerão no futuro (Direito)." },
+          { text: "Adiantamento a Fornecedores", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Ativo", justification: "Valores pagos antecipadamente gerando o direito de receber mercadoria/serviço." },
+          { text: "Contas a Pagar", options: ["Ativo", "Passivo", "Patrimônio Líquido"], answer: "Passivo", justification: "Obrigações diversas a pagar decorrentes das atividades da empresa." }
+        ];
+
+        const cat2_BPvsDRE = [
+          { text: "Caixa", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial, representa um bem do Ativo." },
+          { text: "Custo das Mercadorias Vendidas (CMV)", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (despesa/custo) confrontada com a receita para apurar lucro bruto." },
+          { text: "Receita de Vendas", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (receita), evidencia o faturamento da empresa no período." },
+          { text: "Fornecedores", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial, representa uma obrigação no Passivo." },
+          { text: "Despesa com Salários", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (despesa), reduz o lucro do exercício na DRE." },
+          { text: "Capital Social", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial, representa a origem de recursos dos sócios no PL." },
+          { text: "Despesa de Depreciação", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado, reflete a perda de valor dos bens alocada no período." },
+          { text: "Depreciação Acumulada", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (redutora do Ativo), acumula as depreciações ao longo do tempo." },
+          { text: "Impostos sobre Vendas", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Dedução da receita bruta na DRE para chegar à receita líquida." },
+          { text: "Impostos a Recolher", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (Passivo), representa a dívida gerada com o governo." },
+          { text: "Lucro Bruto", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Resultado intermediário apurado exclusivamente na estrutura da DRE (Receitas - CMV)." },
+          { text: "Estoque de Mercadorias", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (Ativo), representa bens disponíveis para venda." },
+          { text: "Despesas Financeiras", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (despesa), como juros passivos, entra na DRE." },
+          { text: "Empréstimos Bancários", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (Passivo), representa a dívida do principal do empréstimo." },
+          { text: "Devolução de Vendas", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (dedução da receita bruta) evidenciada na DRE." },
+          { text: "Clientes", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (Ativo), representa os direitos a receber." },
+          { text: "Receita de Juros", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (receita financeira) que aumenta o lucro na DRE." },
+          { text: "Reserva Legal", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (PL), parte do lucro retida obrigatoriamente por lei." },
+          { text: "Despesas Administrativas", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "DRE", justification: "Conta de resultado (despesa operacional) reportada na DRE." },
+          { text: "Adiantamento a Fornecedores", options: ["Balanço Patrimonial", "DRE", "Ambas as Demonstrações"], answer: "Balanço Patrimonial", justification: "Conta patrimonial (Ativo), direito a receber produtos/serviços." }
+        ];
+
+        const cat3_LancamentosContabeis = [
+          { text: "Abertura da empresa com capital social em dinheiro.", options: ["D - Caixa / C - Capital Social", "D - Capital Social / C - Caixa", "D - Caixa / C - Receita"], answer: "D - Caixa / C - Capital Social", justification: "Aumenta o Ativo (Caixa a Débito) e aumenta o PL (Capital Social a Crédito)." },
+          { text: "Compra de mercadorias a prazo.", options: ["D - Estoques / C - Fornecedores", "D - Fornecedores / C - Estoques", "D - Estoques / C - Caixa"], answer: "D - Estoques / C - Fornecedores", justification: "Aumenta o Ativo (Estoques a Débito) e aumenta o Passivo (Fornecedores a Crédito)." },
+          { text: "Compra de veículo à vista.", options: ["D - Veículos / C - Caixa", "D - Caixa / C - Veículos", "D - Veículos / C - Contas a Pagar"], answer: "D - Veículos / C - Caixa", justification: "Aumenta o Ativo (Veículos a Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Pagamento de fornecedor em dinheiro.", options: ["D - Fornecedores / C - Caixa", "D - Caixa / C - Fornecedores", "D - Despesa / C - Fornecedores"], answer: "D - Fornecedores / C - Caixa", justification: "Diminui o Passivo (Fornecedores a Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Venda de mercadoria à vista (pelo valor da venda).", options: ["D - Caixa / C - Receita de Vendas", "D - Receita de Vendas / C - Caixa", "D - Caixa / C - Estoques"], answer: "D - Caixa / C - Receita de Vendas", justification: "Aumenta o Ativo (Caixa a Débito) e registra o ganho (Receita a Crédito)." },
+          { text: "Baixa do estoque vendido (Reconhecimento do CMV).", options: ["D - CMV / C - Estoques", "D - Estoques / C - CMV", "D - CMV / C - Caixa"], answer: "D - CMV / C - Estoques", justification: "Aumenta a Despesa (CMV a Débito) e diminui o Ativo (Estoques a Crédito)." },
+          { text: "Venda de mercadoria a prazo (pelo valor da venda).", options: ["D - Clientes / C - Receita de Vendas", "D - Receita de Vendas / C - Clientes", "D - Clientes / C - Estoques"], answer: "D - Clientes / C - Receita de Vendas", justification: "Aumenta o Direito/Ativo (Clientes a Débito) e registra o ganho (Receita a Crédito)." },
+          { text: "Recebimento de cliente em dinheiro.", options: ["D - Caixa / C - Clientes", "D - Clientes / C - Caixa", "D - Caixa / C - Receita de Vendas"], answer: "D - Caixa / C - Clientes", justification: "Aumenta o Ativo (Caixa a Débito) e diminui o Direito/Ativo (Clientes a Crédito)." },
+          { text: "Pagamento de energia elétrica à vista no mês de uso.", options: ["D - Despesa de Energia / C - Caixa", "D - Caixa / C - Despesa de Energia", "D - Fornecedores / C - Caixa"], answer: "D - Despesa de Energia / C - Caixa", justification: "Aumenta a Despesa (Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Apropriação de salários do mês para pagamento futuro.", options: ["D - Despesa de Salários / C - Salários a Pagar", "D - Salários a Pagar / C - Despesa de Salários", "D - Despesa de Salários / C - Caixa"], answer: "D - Despesa de Salários / C - Salários a Pagar", justification: "Aumenta a Despesa (Débito) e cria Obrigação/Passivo (Salários a Pagar a Crédito)." },
+          { text: "Pagamento de salários provisionados do mês anterior.", options: ["D - Salários a Pagar / C - Caixa", "D - Caixa / C - Salários a Pagar", "D - Despesa de Salários / C - Caixa"], answer: "D - Salários a Pagar / C - Caixa", justification: "Diminui o Passivo (Salários a Pagar a Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Depósito de dinheiro do caixa na conta bancária.", options: ["D - Bancos c/ Movimento / C - Caixa", "D - Caixa / C - Bancos c/ Movimento", "D - Despesa / C - Caixa"], answer: "D - Bancos c/ Movimento / C - Caixa", justification: "Aumenta um Ativo (Bancos a Débito) e diminui outro Ativo (Caixa a Crédito)." },
+          { text: "Obtenção de empréstimo bancário creditado em conta corrente.", options: ["D - Bancos c/ Movimento / C - Empréstimos a Pagar", "D - Empréstimos a Pagar / C - Bancos c/ Movimento", "D - Caixa / C - Empréstimos a Pagar"], answer: "D - Bancos c/ Movimento / C - Empréstimos a Pagar", justification: "Aumenta o Ativo (Bancos a Débito) e cria a Obrigação/Passivo (Empréstimos a Crédito)." },
+          { text: "Pagamento de parcela de empréstimo (apenas o principal) via banco.", options: ["D - Empréstimos a Pagar / C - Bancos c/ Movimento", "D - Bancos c/ Movimento / C - Empréstimos a Pagar", "D - Despesa Financeira / C - Caixa"], answer: "D - Empréstimos a Pagar / C - Bancos c/ Movimento", justification: "Diminui o Passivo (Empréstimos a Débito) e diminui o Ativo (Bancos a Crédito)." },
+          { text: "Pagamento antecipado de seguro anual à vista.", options: ["D - Seguros a Vencer (Ativo) / C - Caixa", "D - Despesa de Seguros / C - Caixa", "D - Caixa / C - Seguros a Vencer"], answer: "D - Seguros a Vencer (Ativo) / C - Caixa", justification: "Gera um Direito/Ativo (Seguros a Vencer a Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Apropriação do primeiro mês do seguro pago antecipadamente.", options: ["D - Despesa de Seguros / C - Seguros a Vencer", "D - Seguros a Vencer / C - Despesa de Seguros", "D - Despesa de Seguros / C - Caixa"], answer: "D - Despesa de Seguros / C - Seguros a Vencer", justification: "Reconhece a Despesa (Débito) e reduz o Direito/Ativo (Seguros a Vencer a Crédito)." },
+          { text: "Recebimento antecipado de cliente por um serviço futuro.", options: ["D - Caixa / C - Adiantamento de Clientes", "D - Adiantamento de Clientes / C - Caixa", "D - Caixa / C - Receita de Serviços"], answer: "D - Caixa / C - Adiantamento de Clientes", justification: "Aumenta o Ativo (Caixa a Débito) e cria Obrigação/Passivo (Adiantamento a Crédito)." },
+          { text: "Adiantamento em dinheiro pago a um fornecedor.", options: ["D - Adiantamento a Fornecedores / C - Caixa", "D - Caixa / C - Adiantamento a Fornecedores", "D - Fornecedores / C - Caixa"], answer: "D - Adiantamento a Fornecedores / C - Caixa", justification: "Cria Direito/Ativo (Adiantamento a Débito) e diminui o Ativo (Caixa a Crédito)." },
+          { text: "Reconhecimento da depreciação mensal de um bem.", options: ["D - Despesa de Depreciação / C - Depreciação Acumulada", "D - Depreciação Acumulada / C - Despesa de Depreciação", "D - Despesa de Depreciação / C - Veículos"], answer: "D - Despesa de Depreciação / C - Depreciação Acumulada", justification: "Reconhece a Despesa (Débito) e aumenta a conta Redutora do Ativo (Crédito)." },
+          { text: "Saque de dinheiro da conta bancária para o caixa físico.", options: ["D - Caixa / C - Bancos c/ Movimento", "D - Bancos c/ Movimento / C - Caixa", "D - Caixa / C - Receita"], answer: "D - Caixa / C - Bancos c/ Movimento", justification: "Aumenta o Ativo (Caixa a Débito) e diminui outro Ativo (Bancos a Crédito)." }
+        ];
+
+        const categories = [
+          { id: 1, title: "Conceitos de Ativo, Passivo e PL", data: cat1_AtivoPassivoPL, icon: <Layers className="w-8 h-8" />, prompt: "Onde a conta abaixo é classificada no Balanço Patrimonial?", color: "bg-blue-500", shadow: "shadow-[0_6px_0_0_rgba(29,78,216,1)]", active: "active:shadow-[0_0px_0_0_rgba(29,78,216,1)]" },
+          { id: 2, title: "Demonstrações Financeiras (BP vs DRE)", data: cat2_BPvsDRE, icon: <FileText className="w-8 h-8" />, prompt: "A conta abaixo pertence a qual Demonstração Financeira?", color: "bg-purple-500", shadow: "shadow-[0_6px_0_0_rgba(126,34,206,1)]", active: "active:shadow-[0_0px_0_0_rgba(126,34,206,1)]" },
+          { id: 3, title: "Lançamentos Contábeis Básicos", data: cat3_LancamentosContabeis, icon: <BookOpen className="w-8 h-8" />, prompt: "Qual o lançamento contábil correto para a operação abaixo?", color: "bg-orange-500", shadow: "shadow-[0_6px_0_0_rgba(194,65,12,1)]", active: "active:shadow-[0_0px_0_0_rgba(194,65,12,1)]" }
         ];
 
         // --- GERADOR DE SONS (Web Audio API) ---
@@ -114,12 +157,13 @@
             osc.connect(gain);
             gain.connect(ctx.destination);
           } catch (e) {
-            console.error("Áudio não suportado neste navegador.", e);
+            console.error("Áudio não suportado.", e);
           }
         };
 
         const App = () => {
-          const [screen, setScreen] = useState('cover'); // 'cover', 'quiz', 'result'
+          const [screen, setScreen] = useState('cover'); // 'cover', 'categories', 'quiz', 'result'
+          const [activeCategory, setActiveCategory] = useState(null);
           const [questions, setQuestions] = useState([]);
           const [currentIndex, setCurrentIndex] = useState(0);
           const [selectedOption, setSelectedOption] = useState(null);
@@ -127,15 +171,14 @@
           const [isCorrect, setIsCorrect] = useState(false);
           const [score, setScore] = useState(0);
 
-          // Embaralha as questões ao iniciar
-          useEffect(() => {
-            const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
-            setQuestions(shuffled);
-          }, []);
+          const startCategory = (category) => {
+            // Embaralha as questões e as opções de cada questão
+            const shuffledQuestions = category.data.map(q => {
+              return { ...q, options: [...q.options].sort(() => Math.random() - 0.5) };
+            }).sort(() => Math.random() - 0.5);
 
-          const startGame = () => {
-            const shuffled = [...questionBank].sort(() => Math.random() - 0.5);
-            setQuestions(shuffled);
+            setActiveCategory(category);
+            setQuestions(shuffledQuestions);
             setCurrentIndex(0);
             setScore(0);
             setSelectedOption(null);
@@ -171,27 +214,27 @@
           // --- TELA DE CAPA ---
           if (screen === 'cover') {
             return (
-              <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-sans">
+              <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
                 <div className="max-w-md w-full space-y-10 flex flex-col items-center">
                   
                   <div className="space-y-4">
                     <div className="w-24 h-24 bg-green-500 rounded-3xl mx-auto flex items-center justify-center shadow-[0_6px_0_0_rgba(21,128,61,1)] mb-6">
-                      <AwardIcon className="text-white w-14 h-14" />
+                      <Award className="text-white w-14 h-14" />
                     </div>
                     <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">
                       Classifica<span className="text-green-500">Contas</span>
                     </h1>
-                    <p className="text-lg text-slate-500 font-medium">
-                      Domine o Balanço Patrimonial brincando!
+                    <p className="text-lg text-slate-500 font-medium px-4">
+                      O seu simulador interativo para dominar a Contabilidade!
                     </p>
                   </div>
 
                   <button
-                    onClick={startGame}
+                    onClick={() => setScreen('categories')}
                     className="w-full bg-green-500 hover:bg-green-400 text-white font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(21,128,61,1)] active:shadow-[0_0px_0_0_rgba(21,128,61,1)] active:translate-y-[6px] flex items-center justify-center gap-2 uppercase tracking-wide"
                   >
-                    <PlayIcon className="w-6 h-6" />
-                    Começar
+                    <Play fill="currentColor" className="w-6 h-6" />
+                    Começar Agora
                   </button>
 
                   <div className="pt-10 border-t border-slate-200 w-full flex flex-col gap-6 text-sm text-slate-500">
@@ -200,10 +243,54 @@
                       <p>Dúvidas e Sugestões: <a href="mailto:adanv.vieira@gmail.com" className="text-blue-500 hover:underline">adanv.vieira@gmail.com</a></p>
                     </div>
                     
-                    <blockquote className="italic border-l-4 border-green-400 pl-4 text-left text-slate-600 bg-slate-50 p-3 rounded-r-lg">
+                    <blockquote className="italic border-l-4 border-green-400 pl-4 text-left text-slate-600 bg-slate-100 p-3 rounded-r-lg">
                       "Não a nós, Senhor, nenhuma glória para nós, mas sim ao teu nome, por teu amor e por tua fidelidade!"
                       <footer className="mt-2 font-bold text-right text-xs">- Salmos 115:1</footer>
                     </blockquote>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // --- TELA DE MÓDULOS (Categorias) ---
+          if (screen === 'categories') {
+            return (
+              <div className="min-h-screen bg-slate-50 p-6 font-sans">
+                <div className="max-w-2xl mx-auto space-y-8">
+                  
+                  <div className="flex items-center gap-4 pt-4">
+                    <button onClick={() => setScreen('cover')} className="text-slate-400 hover:text-slate-700 bg-white p-2 rounded-full shadow-sm">
+                      <ArrowRight className="w-6 h-6 rotate-180" />
+                    </button>
+                    <h2 className="text-3xl font-extrabold text-slate-800">Módulos de Estudo</h2>
+                  </div>
+
+                  <p className="text-slate-500 font-medium text-lg mb-8">
+                    Escolha um módulo abaixo para iniciar o seu treinamento. Cada módulo contém 20 questões.
+                  </p>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => startCategory(cat)}
+                        className={`w-full ${cat.color} hover:brightness-110 text-white p-6 rounded-3xl transition-all ${cat.shadow} ${cat.active} active:translate-y-[6px] flex items-center justify-between group`}
+                      >
+                        <div className="flex items-center gap-5 text-left">
+                          <div className="bg-white/20 p-4 rounded-2xl">
+                            {cat.icon}
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-bold">{cat.title}</h3>
+                            <p className="text-white/80 font-medium text-sm mt-1">20 Questões</p>
+                          </div>
+                        </div>
+                        <div className="bg-white/20 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play fill="currentColor" className="w-6 h-6" />
+                        </div>
+                      </button>
+                    ))}
                   </div>
 
                 </div>
@@ -214,28 +301,36 @@
           // --- TELA DE RESULTADO ---
           if (screen === 'result') {
             return (
-              <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center font-sans">
+              <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center font-sans">
                 <div className="max-w-md w-full space-y-8 flex flex-col items-center">
                   
                   <div className="w-32 h-32 bg-yellow-400 rounded-full mx-auto flex items-center justify-center shadow-[0_8px_0_0_rgba(202,138,4,1)] animate-bounce mb-4">
-                    <AwardIcon className="text-yellow-800 w-16 h-16" />
+                    <Award className="text-yellow-800 w-16 h-16" />
                   </div>
                   
                   <h2 className="text-3xl font-extrabold text-slate-800">
-                    Lição Concluída!
+                    Módulo Concluído!
                   </h2>
                   
                   <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 w-full">
-                    <p className="text-lg text-green-800 font-bold mb-1">Seu Desempenho</p>
-                    <p className="text-5xl font-black text-green-500">{score}<span className="text-2xl text-green-400">/30</span></p>
+                    <p className="text-lg text-green-800 font-bold mb-1">Seu Desempenho em {activeCategory.title}</p>
+                    <p className="text-5xl font-black text-green-500">{score}<span className="text-2xl text-green-400">/{questions.length}</span></p>
                   </div>
 
-                  <button
-                    onClick={startGame}
-                    className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(29,78,216,1)] active:shadow-[0_0px_0_0_rgba(29,78,216,1)] active:translate-y-[6px] uppercase tracking-wide mt-4"
-                  >
-                    Jogar Novamente
-                  </button>
+                  <div className="w-full space-y-4 mt-4">
+                    <button
+                      onClick={() => startCategory(activeCategory)}
+                      className="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(29,78,216,1)] active:shadow-[0_0px_0_0_rgba(29,78,216,1)] active:translate-y-[6px] uppercase tracking-wide"
+                    >
+                      Jogar Novamente
+                    </button>
+                    <button
+                      onClick={() => setScreen('categories')}
+                      className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 rounded-2xl text-xl transition-all shadow-[0_6px_0_0_rgba(148,163,184,1)] active:shadow-[0_0px_0_0_rgba(148,163,184,1)] active:translate-y-[6px] uppercase tracking-wide"
+                    >
+                      Voltar aos Módulos
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -246,29 +341,37 @@
           const progressPercentage = ((currentIndex) / questions.length) * 100;
 
           return (
-            <div className="min-h-screen bg-white flex flex-col font-sans select-none overflow-hidden relative">
+            <div className="min-h-screen bg-slate-50 flex flex-col font-sans select-none overflow-hidden relative">
               
+              {/* Efeito Estrelas (CSS in JS) */}
+              <style>{`
+                @keyframes confeti-up {
+                  0% { transform: translateY(0) scale(0.5); opacity: 1; }
+                  50% { transform: translateY(-80px) scale(1.2) rotate(20deg); opacity: 1; }
+                  100% { transform: translateY(-120px) scale(1) rotate(45deg); opacity: 0; }
+                }
+                .animate-confeti { animation: confeti-up 1s ease-out forwards; }
+              `}</style>
+
               {/* Barra de Progresso Superior */}
               <div className="w-full max-w-3xl mx-auto p-4 flex flex-col gap-2">
                 <div className="flex items-center gap-4">
                   <button 
-                    onClick={() => setScreen('cover')}
-                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                    onClick={() => setScreen('categories')}
+                    className="text-slate-400 hover:text-slate-600 transition-colors bg-white p-1 rounded-full shadow-sm"
                   >
-                    <XIcon className="w-6 h-6" strokeWidth="3" />
+                    <X strokeWidth="3" className="w-6 h-6" />
                   </button>
                   <div className="h-4 flex-1 bg-slate-200 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-green-500 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${progressPercentage}%` }}
                     >
-                      {/* Brilho na barra */}
                       <div className="w-full h-1 bg-white/30 rounded-t-full mt-0.5 mx-1" />
                     </div>
                   </div>
                 </div>
                 
-                {/* Contador de Questões e Acertos */}
                 <div className="flex justify-between items-center text-sm font-bold text-slate-500 px-10">
                   <span>Questão {currentIndex + 1} de {questions.length}</span>
                   <span className="text-green-600 bg-green-100 px-3 py-1 rounded-full border border-green-200 flex items-center gap-1">
@@ -279,23 +382,29 @@
 
               {/* Área da Pergunta */}
               <div className="flex-1 max-w-3xl w-full mx-auto p-6 flex flex-col justify-center">
-                <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mb-8 text-center">
-                  Onde a conta abaixo é classificada no Balanço Patrimonial?
-                </h2>
+                <div className="mb-8 text-center space-y-4">
+                   <span className={`inline-block px-4 py-1 rounded-full text-sm font-bold text-white shadow-sm ${activeCategory.color}`}>
+                     {activeCategory.title}
+                   </span>
+                   <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">
+                     {activeCategory.prompt}
+                   </h2>
+                </div>
                 
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-3xl p-8 mb-10 text-center shadow-sm">
-                  <span className="text-3xl md:text-4xl font-bold text-blue-900">
-                    {currentQuestion.account}
+                <div className="bg-white border-2 border-slate-200 rounded-3xl p-8 mb-10 text-center shadow-sm">
+                  <span className="text-2xl md:text-4xl font-bold text-blue-900 leading-snug">
+                    {currentQuestion.text}
                   </span>
                 </div>
 
-                {/* Botões de Opções */}
+                {/* Botões de Opções Dinâmicos */}
                 <div className="grid grid-cols-1 gap-4">
-                  {['Ativo', 'Passivo', 'Patrimônio Líquido'].map((option) => {
+                  {currentQuestion.options.map((option) => {
                     const isSelected = selectedOption === option;
                     const isCorrectOption = option === currentQuestion.answer;
+                    const isLongText = option.length > 25;
                     
-                    let btnClass = "border-2 text-lg font-bold py-4 px-6 rounded-2xl transition-all text-center relative ";
+                    let btnClass = `border-2 font-bold py-4 px-6 rounded-2xl transition-all relative flex items-center justify-center min-h-[80px] ${isLongText ? 'text-base md:text-lg text-left px-8' : 'text-xl text-center'} `;
                     
                     if (isChecked) {
                       if (option === selectedOption && isCorrect) {
@@ -335,13 +444,13 @@
                 isCorrect ? 'border-green-200 bg-green-100' : 'border-red-200 bg-red-100'
               }`}>
                 
-                {/* Efeito Visual de Acerto (Estrelas flutuantes) */}
+                {/* Efeito Visual de Acerto */}
                 {isChecked && isCorrect && (
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-10 pointer-events-none flex gap-6">
                      {[...Array(5)].map((_, i) => (
-                        <StarIcon 
+                        <Star 
                           key={i} 
-                          className="w-10 h-10 text-yellow-400 fill-yellow-400 animate-confeti drop-shadow-md" 
+                          className="w-10 h-10 text-yellow-400 animate-confeti drop-shadow-md" 
                           style={{ animationDelay: `${i * 0.1}s` }} 
                         />
                      ))}
@@ -350,17 +459,16 @@
 
                 <div className="max-w-3xl mx-auto p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4">
                   
-                  {/* Mensagem de Feedback */}
                   <div className="flex-1 w-full flex items-center">
                     {isChecked && isCorrect && (
                       <div className="flex items-start gap-3 text-green-700">
                         <div className="bg-white p-2 rounded-full shadow-sm mt-1">
-                          <CheckIcon className="w-8 h-8 text-green-500" />
+                          <Check strokeWidth="4" className="w-8 h-8 text-green-500" />
                         </div>
                         <div>
                           <h3 className="text-2xl font-extrabold mb-1">Excelente!</h3>
                           <p className="text-green-800 text-sm font-medium leading-relaxed max-w-lg">
-                            <span className="font-bold">Porquê?</span> {currentQuestion.justification}
+                            <span className="font-bold">Por que?</span> {currentQuestion.justification}
                           </p>
                         </div>
                       </div>
@@ -369,7 +477,7 @@
                     {isChecked && !isCorrect && (
                       <div className="flex items-start gap-3 text-red-700">
                          <div className="bg-white p-2 rounded-full shadow-sm mt-1">
-                          <XIcon className="w-8 h-8 text-red-500" strokeWidth="4" />
+                          <X strokeWidth="4" className="w-8 h-8 text-red-500" />
                         </div>
                         <div>
                           <h3 className="text-2xl font-extrabold mb-1">Incorreto.</h3>
@@ -377,14 +485,13 @@
                             A resposta certa é: {currentQuestion.answer}
                           </p>
                           <p className="text-red-800 text-sm font-medium leading-relaxed max-w-lg">
-                            <span className="font-bold">Porquê?</span> {currentQuestion.justification}
+                            <span className="font-bold">Por que?</span> {currentQuestion.justification}
                           </p>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Botão de Ação */}
                   <button
                     onClick={isChecked ? handleNext : handleCheck}
                     disabled={!selectedOption && !isChecked}
