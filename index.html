@@ -19,13 +19,14 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel para JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Babel para JSX (versão fixada para maior estabilidade) -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
 </head>
 <body class="bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <!-- Adicionado data-type="module" para suportar injeções do ambiente e evitar SyntaxError -->
+    <script type="text/babel" data-type="module">
         const { useState, useEffect } = React;
 
         // --- ÍCONES EM SVG ---
